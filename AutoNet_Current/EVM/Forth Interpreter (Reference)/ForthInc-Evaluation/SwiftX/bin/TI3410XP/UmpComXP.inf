@@ -1,0 +1,173 @@
+;******************************************************************************
+;*   COPYRIGHT (C) 2002 TEXAS INSTRUMENTS INCORPORATED.
+;*   ALL RIGHTS RESERVED. ONLY USE WITH TEXAS INSTRUMENTS SILICON.
+;******************************************************************************
+;*
+;*   FILE:           UmpComXP.INF
+;*   SUBSYSTEM:      VCP Devices
+;*
+;*   ABSTRACT:       Driver Installation file for
+;*                   TI's VCP Driver for TUSB3410/TUSB5052, Serial Port module
+;*
+;* REVISION HISTORY:
+;*
+;*   STR #   INIT   DATE            SHORT TITLE
+;*  [.....]  PJG  08/20/02  Initial revision of win200/XP....................
+;*  [.....]  PJG  10/21/02  Fix Parity and GetCommStatus on reads............
+;*  [.....]  DWB  10/30/02  Fix Timeout timing/Win2K UNINSTALL hang..........
+;*  [.....]  DWB  17 JUL 03 Create EVM eeprom pid to differentiate GPIO/UART.
+;*  [.....]   BK  24 NOV 03 Engr Bld 1.2.10.84 for 2k/XP enum, DUN, etc......
+;*  [.....]   BK  23 DEC 03 Engr Bld 1.2.10.86 (SetMSRLines tags in INF/registry
+;*                           control floating MSR w/a in driver.
+;*  [.....]   BK  05 JAN 04 Engr Bld 1.2.10.87 Fix COM port assignment
+;*  [.....]   BK  14 JAN 04 Engr Bld 1.2.10.88 Fix DUN surprise disconnect
+;*  [xxxxx]  JCR  11 FEB 04 Engr Bld 1.2.10.90 Fix race condition on surprise removal
+;*  [xxxxx]  JCR  19 FEB 04 Engr Bld 1.2.10.91 Fix the wait for threads......
+;*  [xxxxx]   BK  12 JUN 04 Engr Bld 1.2.10.95 INF can set custom port display names
+;*  [xxxxx]  nnn  dd mmm yy .................................................
+;*
+;******************************************************************************
+;*
+[version]
+Signature="$CHICAGO$"
+Class=Ports
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318}
+Provider=%Provider%
+CatalogFile = "UMPCOMXP.cat"
+DriverVer   = 11/01/2004,1.2.11.03
+
+[ControlFlags]
+;  Vendor: Replace TI's VID (0451) and PID (3410 or 5052) below with your own VID/PID
+;  THESE STRINGS MUST MATCH THE HWID STRINGS IN UMPUSBXP.INF.  
+;ExcludeFromSelect = umpport\VID_0451_3410_com				; <------------ TUSB3410 applications
+ExcludeFromSelect = umpport\MSP_FET430UIF_COM                           ; <------------ MSP-FET430UIF
+;ExcludeFromSelect = umpport\VID_0451_5052_com				; <------------ TUSB5052 applications
+ExcludeFromSelect = umpport\VID_0451_5052_port1				; <------------ TUSB5052 applications
+ExcludeFromSelect = umpport\VID_0451_5052_port2				; <------------ TUSB5052 applications
+; ****
+
+; -----------------------------------------------------------------------------
+; Table of Contents:  manufacturer, then devices.
+; -----------------------------------------------------------------------------
+[Manufacturer]
+%TIUMP%=TIUMP
+
+; -----------------------------------------------------------------------------
+; The devices
+; -----------------------------------------------------------------------------
+[TIUMP]
+; Release 1.2.10.96: These lines replace line with "umpport\com"
+; Vendor:  In the next line, replace TI VID (0451) and PID (3410) with your own VID/PID
+;%TIUMP.Com.Desc% = TIUMPSER.Install, umpport\VID_0451_3410_com       ;		<------------ TUSB3410 applications
+%TIUMP.Com.Desc% = TIUMPSER.Install, umpport\MSP_FET430UIF_COM       ;		<------------ MSP-FET430UIF
+
+; Vendor:  In the next lines, replace TI VID (0451) and PID (5052) with your own VID/PID
+;%TIUMP.Com.Desc% = TIUMPSER.Install, umpport\VID_0451_5052_com      ; 	        <------------ TUSB5052 applications
+%TIUMP.Port1.Desc% = TIUMPSER.Install, umpport\VID_0451_5052_port1   ; 		<------------ TUSB5052 applications
+%TIUMP.Port2.Desc% = TIUMPSER.Install, umpport\VID_0451_5052_port2   ; 		<------------ TUSB5052 applications
+; ****
+
+; -----------------------------------------------------------------------------
+; Specify target paths...
+; -----------------------------------------------------------------------------
+[DestinationDirs]
+DefaultDestDir                  = 11 ; LDID_SYS
+TIUMPSER.NT.CopyFiles                   = 12 ; system32\drivers
+
+; -----------------------------------------------------------------------------
+; Specify the install disks.  A bit unwieldy during development.
+; -----------------------------------------------------------------------------
+[SourceDisksNames]
+1=%DiskString%,"TIUMPUSB",,
+
+[SourceDisksFiles]
+umpusbxp.sys = 1
+
+; -----------------------------------------------------------------------------
+; Class Installer
+; -----------------------------------------------------------------------------
+[ClassInstall32.NT]
+AddReg=PortsClass.NT.AddReg
+
+[PortsClass.NT.AddReg]
+HKR,,,,%PortsClassName%
+HKR,,Icon,,"-23"
+HKR,,Installer32,,"MsPorts.Dll,PortsClassInstaller"
+
+; -----------------------------------------------------------------------------
+;       TIUMPSER.SYS Device installation
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+;       How to install the WDM driver on NT
+; -----------------------------------------------------------------------------
+[TIUMPSER.Install.NT]
+Include=msports.inf
+Needs=SerialEnumerator.NT
+CopyFiles                       = TIUMPSER.NT.CopyFiles
+AddReg                          = TIUMPSER.NT.AddReg
+; addreg and copy files for serenum.sys
+
+; -----------------------------------------------------------------------------
+;       How to start the WDM driver on NT
+; -----------------------------------------------------------------------------
+[TIUMPSER.Install.NT.Services]
+Include=msports.inf
+Needs=SerialEnumerator.NT.Services
+AddService              = umpusbxp, 0x00000002, TIUMPSER.AddService
+; install the serenum service itself
+
+[TIUMPSER.AddService]
+DisplayName             = %TIUMP.Com.ServiceDesc%
+ServiceType             = 1     ; SERVICE_KERNEL_DRIVER
+StartType               = 3     ; SERVICE_DEMAND_START
+ErrorControl            = 1     ; SERVICE_ERROR_NORMAL
+ServiceBinary           = %12%\umpusbxp.sys
+LoadOrderGroup          = Extended Base
+
+; -----------------------------------------------------------------------------
+;       WDM registry entries (NT only)
+; -----------------------------------------------------------------------------
+[TIUMPSER.NT.AddReg]
+HKR,,PortSubClass,1,01
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+
+; -----------------------------------------------------------------------------
+;       The WDM copy list for NT -- different because things go in
+;       different places.
+; -----------------------------------------------------------------------------
+[TIUMPSER.NT.CopyFiles]
+;umpusbxp.sys
+
+; -----------------------------------------------------------------------------
+;   The Hardware list for NT.  This comes from msports.inf for ComPorts.
+; -----------------------------------------------------------------------------
+[TIUMPSER.Install.NT.HW]
+AddReg = TIUMPSER.NT.HW.AddReg
+
+[TIUMPSER.NT.HW.AddReg]
+HKR,,"UpperFilters", 0x00010000, "serenum"
+
+; -----------------------------------------------------------------------------
+; Localizable Strings
+; -----------------------------------------------------------------------------
+[strings]
+
+;BEGIN ENG - US English Strings
+; Vendor:  for each string below, customize for your application
+Provider                        = "Texas Instruments"                   ; <------------ TUSB3410/TUSB5052 applications
+TIUMP                           = "Texas Instruments"                   ; <------------ TUSB3410/TUSB5052 applications
+DiskString                      = ""
+PortsClassName          = "VCP USB Serial Port"                       	; <------------ TUSB3410/TUSB5052 applications
+TIUMP.Com.ServiceDesc   = "VCP Serial Port Driver"                      ; <------------ TUSB3410/TUSB5052 applications
+; ****  Release 1.2.10.96: One of these names displays in the Device Manager list *****
+;TIUMP.Com.Desc          = "USB - Serial Port"                         	; <------------ TUSB3410 applications
+TIUMP.Com.Desc          = "MSP-FET430UIF - Serial Port"                	; <------------ MSP-FET430UIF
+TIUMP.Port1.Desc          = "USB - 1st Serial Port"                     ; <------------ TUSB5052 applications
+TIUMP.Port2.Desc          = "USB - 2nd Serial Port"                     ; <------------ TUSB5052 applications
+; ****
+TIUMP.Service.Desc      = "VCP USB Serial Port"                         ; <------------ TUSB3410/TUSB5052 applications
+UpperDescription        = "VCP USB Serial Port"                         ; <------------ TUSB3410/TUSB5052 applications
+
+;END ENG - US English Strings
+;*** end of file ***

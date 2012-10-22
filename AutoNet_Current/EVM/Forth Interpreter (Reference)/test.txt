@@ -1,0 +1,51 @@
+Defining new words
+
+: admin + - ;
+: m_admin_p * admin + ;
+: finally if + admin else m_admin_p - then ;
+
+50 10 20 30 40  10 0 finally .s
+100 30 20 10 1 finally .s
+___________________________________________________
+
+Defining and using variables
+
+variable v1
+10 v1 !
+v1 @ .
+
+Or alternatively we could say
+
+CREATE v2 DOCOL ' LITERAL , HERE @ 2 CELLS + , 0 , 0 ,
+___________________________________________________
+
+define a word that can define 1-dimensional arrays
+: array CREATE DOCOL HERE @ 3 CELLS + LIT 0 , ALLOT ;
+
+Then we can define an array like this
+10 array myarray
+to make an array called "myarray" with 10 bytes.
+
+a word to get the address of a cell in an array
+: of_array ' 16 + + ;
+
+so to get the address of the 10th cell of array myarray we say
+3 of_array myarray
+
+___________________________________________________
+
+define a kind of looping construct using the current primitives ... BEGIN commands CONDITION UNTIL
+it will loop until the condition becomes true.
+
+: begin here @ ; immediate
+: until postpone 0branch here @ - 1 cells / , ; immediate
+
+____________________________________________________
+
+we can define Factorial(N), that is N!
+the above looping structure is used here, so define it first and then
+
+: factorial 1 begin swap dup 1 - -rot * swap dup -rot if 0 else 1 then until swap drop ;
+
+then try
+5 factorial .

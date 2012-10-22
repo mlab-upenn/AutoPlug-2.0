@@ -1,0 +1,1 @@
+#define STK_CANARY_VAL		0x55

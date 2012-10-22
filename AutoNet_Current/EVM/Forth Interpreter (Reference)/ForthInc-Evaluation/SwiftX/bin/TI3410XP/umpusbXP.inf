@@ -1,0 +1,239 @@
+;******************************************************************************
+;*   COPYRIGHT (C) 2002 TEXAS INSTRUMENTS INCORPORATED.
+;*   ALL RIGHTS RESERVED. ONLY USE WITH TEXAS INSTRUMENTS SILICON.
+;******************************************************************************
+;*
+;*   FILE:           UmpUsbXP.INF
+;*   SUBSYSTEM:      VCP Devices
+;*
+;*   ABSTRACT:       Driver Installation file for
+;*                   TI's VCP Driver for TUSB3410/TUSB5052, USB module
+;*
+;* REVISION HISTORY:
+;*
+;*   STR #   INIT   DATE            SHORT TITLE
+;*  [.....]  PJG  08/20/02  Initial revision of win2000/XP....................
+;*  [.....]  PJG  10/21/02  Fix Parity and GetCommStatus on reads............
+;*  [.....]  DWB  10/30/02  Fix Timeout timing/Win2K UNINSTALL hang..........
+;*  [.....]  DWB  17 JUL 03 Create EVM eeprom pid to differentiate GPIO/UART.
+;*  [.....]   BK  24 NOV 03 Engr Bld 1.2.10.84 for 2k/XP enum, DUN, etc......
+;*  [.....]   BK  22 DEC 03 Engr Bld 1.2.10.85 (*SPECIAL*) floating MSR w/a .
+;*                           DSR=DCD=RI=0 whatever FW messages say...........
+;*  [.....]   BK  23 DEC 03 Engr Bld 1.2.10.86 (SetMSRLines tags in INF/registry
+;*                           control floating MSR w/a in driver.
+;*  [.....]   BK  05 JAN 04 Engr Bld 1.2.10.87 Fix COM port assignment
+;*  [.....]   BK  14 JAN 04 Engr Bld 1.2.10.88 Fix DUN surprise disconnect
+;*  [xxxxx]  JCR  11 FEB 04 Engr Bld 1.2.10.90 Fix race condition on surprise removal
+;*  [xxxxx]  JCR  19 FEB 04 Engr Bld 1.2.10.91 Fix the wait for threads......
+;*  [xxxxx]   BK  12 JUN 04 Engr Bld 1.2.10.95 INF can set custom port display names
+;*  [xxxxx]   BK  07 JUL 04 1.2.10.95 Add PID_505A for EEPROM boot header
+;*  [xxxxx]  nnn  dd mmm yy .................................................
+;*
+;******************************************************************************
+;*
+[Version]
+signature="$WINDOWS NT$"
+Class = MultiportSerial
+ClassGuid = {50906cb8-ba12-11d1-bf5d-0000f805f530}
+Provider=%TIInc%
+CatalogFile=UMPUSBXP.cat
+;* LayoutFile=LAYOUT.INF
+DriverVer   = 11/01/2004,1.2.11.03
+
+[Manufacturer]
+%TI.Mfg%=TI.Section
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+[SourceDisksNames]
+1 = %DiskName%
+
+[SourceDisksFiles]
+umpf3410.i51=1
+umpf5052.i51=1
+umpusbxp.sys=1
+
+[DestinationDirs]
+DefaultDestDir=11               ; LDID_SYS
+
+UMPUSB.CopyFiles.NT          = 10, system32\drivers
+TI5052.CopyFiles.NT          = 10, system32\drivers
+;TI5152.CopyFiles.NT          = 10, system32\drivers
+TI3410.CopyFiles.NT          = 10, system32\drivers
+
+
+;----------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------
+;   5052
+;----------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------
+[TI5052.Boot.NT]
+CopyFiles=UMPUSB.CopyFiles.NT,TI5052.CopyFiles.NT
+AddReg=TI5052.AddReg.NT
+
+[TI5052.Dev.NT]
+CopyFiles=UMPUSB.CopyFiles.NT,TI5052.CopyFiles.NT
+AddReg=TI5052.AddReg.NT
+
+[TI5052.Boot.NT.HW]
+AddReg=TI5252.Generic.Addreg.NT.HW, TI5052.AddReg.NT.HW
+
+[TI5052.Dev.NT.HW]
+AddReg=TI5252.Generic.Addreg.NT.HW, TI5052.Dev.AddReg.NT.HW
+
+[TI5052.AddReg.NT]
+;HKR,,EnumPropPages32,,"usbui.dll,USBHubPropPageProvider"
+
+[TI5252.Generic.Addreg.NT.HW]
+HKR,,NumComPorts,%REG_DWORD%,2
+HKR,,NumLptPorts,%REG_DWORD%,0
+
+[TI5052.AddReg.NT.HW]
+HKR,,ImageFile,,"\SystemRoot\System32\drivers\umpf5052.i51"
+HKR,,TIDeviceType,,"TILDR5052"
+
+[TI5052.Dev.AddReg.NT.HW]
+HKR,,ImageFile,,"\SystemRoot\System32\drivers\umpf5052.i51"
+HKR,,TIDeviceType,,"TIUSB5052"
+
+; Vendor:  In these HWID strings, replace TI VID (0451) and PID (5052) with your own 
+; VID/PID.  Or, replace the HWID in quotes with some other name unique to your company 
+; and product.  This key is stored in the registry and is also used by Windows Update.  
+;HKR,,Port1DeviceHWID,,"VID_0451_5052_com"   ; set to these for common port names  	; <------ TUSB5052 applications
+;HKR,,Port2DeviceHWID,,"VID_0451_5052_com"             					; <------ TUSB5052 applications
+HKR,,Port1DeviceHWID,,"VID_0451_5052_port1"  ; set to these for different port names 	; <------ TUSB5052 applications
+HKR,,Port2DeviceHWID,,"VID_0451_5052_port2" 						; <------ TUSB5052 applications
+;
+
+
+
+; ****
+
+[TI5052.CopyFiles.NT]
+umpf5052.i51
+
+
+;----------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------
+;   3410 -- Unitary driver. Bootloader and driver are same instance.
+;----------------------------------------------------------------------------------
+;----------------------------------------------------------------------------------
+[TI3410.Uni.NT]
+CopyFiles=UMPUSB.CopyFiles.NT,TI3410.CopyFiles.NT
+DelFiles=UMPUSB.DelFiles
+AddReg=TI3410.AddReg.NT
+
+[TI3410.Uni.NT.HW]
+AddReg=TI3410.AddReg.NT.HW
+
+[TI3410.Dev.NT]
+CopyFiles=UMPUSB.CopyFiles.NT,TI3410.CopyFiles.NT
+DelFiles=UMPUSB.DelFiles
+AddReg=TI3410.AddReg.NT
+
+[TI3410.Dev.NT.HW]
+AddReg=TI3410.AddReg.NT.HW
+
+[TI3410.AddReg.NT]
+;HKR,,EnumPropPages32,,"usbui.dll,USBHubPropPageProvider"
+
+[TI3410.AddReg.NT.HW]
+HKR,,ImageFile,,"\SystemRoot\System32\drivers\umpf3410.i51"
+HKR,,SetMSRLinesZero,%REG_BINARY%,0x00  ; 0x80=DCD 0x40=RI 0x20=DSR 0x10=CTS
+HKR,,SetMSRLinesOne, %REG_BINARY%,0x00  ; 0x80=DCD 0x40=RI 0x20=DSR 0x10=CTS 
+HKR,,NumComPorts,%REG_DWORD%,1
+HKR,,NumLptPorts,%REG_DWORD%,0
+HKR,,TIDeviceType,,"TIUSB3410"
+; Release 1.2.10.96: This line sets the Virtual COM Port HW ID  
+
+
+; Vendor: In this HWID string, replace TI VID (0451) and PID (3410) with your 
+; own VID/PID; or, use some other string unique to your company and product.   This
+; key is stored in the registry and is also used by Windows Update.   
+;HKR,,Port1DeviceHWID,,"VID_0451_3410_com"					; <------------ TUSB3410 applications
+HKR,,Port1DeviceHWID,,"MSP_FET430UIF_COM"                                       ; <------------ MSP-FET430UIF
+; ****
+; This defines the name shown by the Found New HW wizard for the COM port child device:
+;HKR,,ComPortChildDeviceText,,"Texas Instruments UMP Serial Port"
+HKR,,ComPortChildDeviceText,,"MSP-FET430UIF - Serial Port"
+
+
+[TI3410.CopyFiles.NT]
+umpf3410.i51
+
+[TI3410.Uni.Services]
+AddService = umpusbxp, 0x00000002, StandardUMPUSB.AddService
+
+[TI3410.Dev.Services]
+AddService = umpusbxp, 0x00000002, StandardUMPUSB.AddService
+
+[TI3410.Uni.NT.Services]
+AddService = umpusbxp, 0x00000002, StandardUMPUSB.AddService
+
+[TI3410.Dev.NT.Services]
+AddService = umpusbxp, 0x00000002, StandardUMPUSB.AddService
+
+[TI5052.Boot.NT.Services]
+AddService = umpusbxp, 0x00000002, StandardUMPUSB.AddService
+
+[TI5052.Dev.NT.Services]
+AddService = umpusbxp, 0x00000002, StandardUMPUSB.AddService
+
+[StandardUMPUSB.AddService]
+DisplayName    = %StandardUMPUSB.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\umpusbxp.sys
+LoadOrderGroup = Base
+
+; =================== Sections ==================================
+; NOTE: All 5152 chipset IDs are now aliased to 5052.
+[TI.Section]
+; Vendor:  In the next line, replace "0451" with your VID, 
+; and replace the last occurrence of "3410" with your PID
+;%PID_3410.DeviceDesc%=TI3410.Uni,USB\VID_0451&PID_3410	  			; <------------ TUSB3410 applications
+;%PID_341A.DeviceDesc%=TI3410.Uni,USB\VID_0451&PID_341A
+%PID_F430.DeviceDesc%=TI3410.Uni,USB\VID_0451&PID_F430                          ; <------------ MSP-FET430UIF
+
+%PID_5052.DeviceDesc%=TI5052.Boot,USB\VID_0451&PID_5052
+%PID_5052.DeviceDesc%=TI5052.Boot,USB\VID_0451&PID_505A
+%PID_505F.DeviceDesc%=TI5052.Dev,USB\VID_0451&PID_505F
+
+%PID_5052.DeviceDesc%=TI5052.Boot,USB\VID_0451&PID_5152
+%PID_505F.DeviceDesc%=TI5052.Dev,USB\VID_0451&PID_515F
+
+; =================== Global ==================================
+[UMPUSB.CopyFiles.NT]
+umpusbxp.sys,,,0x00000004
+
+[UMPUSB.DelFiles]
+
+; =================== Strings ==================================
+
+[Strings]
+; Vendor:  for each string below, customize for your application
+TIInc="Texas Instruments, Inc"                           		; <------------ TUSB3410/TUSB5052 applications
+USBClassName="TI UMP Devices"                           		; <------------ TUSB3410/TUSB5052 applications
+StandardUMPUSB.SvcDesc="Texas Instruments VCP Device Driver"    	; <------------ TUSB3410/TUSB5052 applications
+
+TI.Mfg="Texas Instruments"                           			; <------------ TUSB3410/TUSB5052 applications
+
+DiskName="TI VCP Installation Disk"                           		; <------------ TUSB3410/TUSB5052 applications
+
+; Vendor:  In the next line, replace 3410 with your PID, and change
+; the string
+;PID_3410.DeviceDesc="TUSB3410 Device"                           	; <------------ TUSB3410 applications
+
+;PID_341A.DeviceDesc="TUSB3410UART EVM"
+PID_F430.DeviceDesc="MSP-FET430UIF (TI USB FET) Adapter"                ; <------------ MSP-FET430UIF
+
+; Vendor:  In the next lines, change the strings
+PID_5052.DeviceDesc="TUSB5052 Loader"                           	; <------------ TUSB5052 applications
+PID_505F.DeviceDesc="TUSB5052"                           		
+
+REG_BINARY =0x00000001
+REG_DWORD  =0x00010001
+
+
